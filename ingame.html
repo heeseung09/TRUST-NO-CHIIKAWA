@@ -257,7 +257,7 @@
       <input type="text" id="chat-text-input" placeholder="메시지 입력..." style="flex: 1; height: 8cqi; border-radius: 2cqi; background: #221c36; color: #fff; border: 1px solid #ff85a2; padding: 0 2cqi; font-size: clamp(0.75rem, 3.2cqi, 0.85rem);" onkeypress="if(event.key==='Enter') sendChatMessage()">
       <button onclick="sendChatMessage()" style="height: 8cqi; padding: 0 3cqi; background: #ff85a2; color: white; border: none; border-radius: 2cqi; font-weight: bold; cursor: pointer;">전송</button>
     </div>
-  </div>
+</div>
 
   <button id="sticky-btn" class="btn-action" onclick="handleStickyClick()">진행 대기 중</button>
 
@@ -291,9 +291,9 @@
   function appendLog(msg) {
     const box = document.getElementById('log-box');
     if (box) {
-      box.innerHTML += `<div>${msg}</div>`;
-      box.scrollTop = box.scrollHeight;
-    }
+    box.innerHTML += `<div>${msg}</div>`;
+    box.scrollTop = box.scrollHeight;
+  }
   }
 
   function switchTab(tabId) {

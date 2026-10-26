@@ -476,9 +476,12 @@
       showToast('설정 창은 준비 중입니다.');
     });
 
-    // 💡 [핵심 수정] file:// 경로 직접 실행 시 location.hostname 빈값 처리
-    const host = location.hostname || 'localhost';
-    const ws = new WebSocket(`ws://${host}:8000/ws/${roomId}/${playerId}`);
+    // 💡 Render 백엔드 서버(wss://) 연결 설정
+    const RENDER_SERVER = 'wss://[trust-no-chiikawa.onrender.com]';
+    const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.hostname === '';
+    const SERVER_URL = isLocal ? `ws://${location.hostname || 'localhost'}:8000` : RENDER_SERVER;
+
+    const ws = new WebSocket(`${SERVER_URL}/ws/${roomId}/${playerId}`);
 
     ws.onopen = () => {
       ws.send(JSON.stringify({ type: 'JOIN', name: initNick }));
@@ -496,7 +499,6 @@
         const totalCount = currentPlayers.length;
         playerCountText.textContent = `(${totalCount}/8)`;
 
-        // 💡 [핵심 수정] 내 상태 업데이트
         const myInfo = data.me || {};
         isHost = myInfo.is_host || false;
         isMyReady = myInfo.is_ready || false;
@@ -531,7 +533,6 @@
           playerListEl.appendChild(itemDiv);
         });
 
-        // 💡 [핵심 수정] 버튼 상태 및 텍스트 전환
         if (isHost) {
           mainBtn.innerHTML = '<span>👥 게임 시작하기</span>';
           if (totalCount >= 5 && allOthersReady) {
