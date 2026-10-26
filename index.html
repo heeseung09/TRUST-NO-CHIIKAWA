@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#05040a">
+  <title>TRUST NO CHIIKAWA</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Pretendard", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      background-color: #05040a;
+      color: #ffffff;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .canvas-container {
+      width: min(100vw, calc(100svh * (360 / 640)));
+      height: min(100svh, calc(100vw * (640 / 360)));
+      aspect-ratio: 360 / 640;
+      position: relative;
+      background-color: #07060c;
+      overflow: hidden;
+      box-shadow: 0 0 50px rgba(0, 0, 0, 0.95);
+      isolation: isolate;
+    }
+
+    .bg-image {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: fill;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    .logo-image {
+      position: absolute;
+      top: 31.25%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 97.22%;
+      aspect-ratio: 350 / 175;
+      object-fit: contain;
+      z-index: 3;
+      filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.85));
+      pointer-events: none;
+    }
+
+    .btn-create-room {
+      position: absolute;
+      top: 70.31%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 61.11%;
+      height: 7.5%;
+      background: linear-gradient(180deg, rgba(190, 35, 45, 0.88) 0%, rgba(130, 20, 30, 0.93) 100%);
+      border: 1.5px solid rgba(255, 110, 120, 0.6);
+      border-radius: 12px;
+      color: #fce8d5;
+      font-size: 1rem;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(4px);
+      transition: transform 0.15s ease, filter 0.15s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 4;
+      letter-spacing: -0.5px;
+      touch-action: manipulation;
+    }
+
+    .btn-join-room {
+      position: absolute;
+      top: 80.47%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 66.67%;
+      height: 7.5%;
+      background: linear-gradient(180deg, rgba(85, 30, 35, 0.88) 0%, rgba(50, 18, 22, 0.93) 100%);
+      border: 1.5px solid rgba(160, 75, 80, 0.5);
+      border-radius: 12px;
+      color: #d8b8a8;
+      font-size: 1rem;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(4px);
+      transition: transform 0.15s ease, filter 0.15s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 4;
+      letter-spacing: -0.5px;
+      touch-action: manipulation;
+    }
+
+    .btn-create-room:active, .btn-join-room:active {
+      transform: translateX(-50%) scale(0.96);
+      filter: brightness(1.2);
+    }
+
+    .modal-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(5, 4, 10, 0.78);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      z-index: 10;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .modal-overlay[hidden] {
+      display: none !important;
+    }
+
+    .modal-box {
+      width: 308px;
+      background: #111422;
+      border: 1.5px solid #a34e48;
+      border-radius: 12px;
+      padding: 22px 20px 20px;
+      box-shadow: inset 0 0 0 1px rgba(220, 110, 100, 0.2), 0 0 20px rgba(163, 78, 72, 0.25), 0 15px 40px rgba(0, 0, 0, 0.85);
+      text-align: center;
+      position: relative;
+    }
+
+    .modal-box::before {
+      content: "";
+      position: absolute;
+      top: 4px;
+      left: 4px;
+      right: 4px;
+      bottom: 4px;
+      border: 1px solid rgba(163, 78, 72, 0.22);
+      border-radius: 8px;
+      pointer-events: none;
+    }
+
+    .modal-eyebrow {
+      color: #7b8396;
+      font-size: 10.5px;
+      letter-spacing: 0.15em;
+      margin-bottom: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .modal-eyebrow::before, .modal-eyebrow::after {
+      content: "";
+      width: 22px;
+      height: 1px;
+      background: rgba(123, 131, 150, 0.4);
+    }
+
+    .modal-title {
+      color: #ffffff;
+      font-size: 21px;
+      font-weight: 800;
+      margin-bottom: 4px;
+      letter-spacing: -0.5px;
+    }
+
+    .modal-sub {
+      color: #8890a3;
+      font-size: 12.5px;
+      margin-bottom: 18px;
+    }
+
+    .field-group {
+      text-align: left;
+      margin-bottom: 14px;
+    }
+
+    .field-label {
+      display: block;
+      color: #d4d8e5;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .input-wrapper {
+      position: relative;
+      width: 100%;
+    }
+
+    .input-field {
+      width: 100%;
+      height: 44px;
+      background: #161a29;
+      border: 1px solid #2d354d;
+      border-radius: 8px;
+      color: #ffffff;
+      font-size: 14.5px;
+      font-weight: 600;
+      padding: 0 40px 0 14px;
+      outline: none;
+      transition: border-color 0.2s ease;
+      user-select: text;
+      -webkit-user-select: text;
+    }
+
+    .input-field::placeholder {
+      color: #5d667d;
+      font-weight: normal;
+    }
+
+    .input-field:focus {
+      border-color: #a34e48;
+    }
+
+    .input-field[readonly] {
+      background: #131725;
+      color: #ffffff;
+    }
+
+    .copy-btn {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #7b8396;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px;
+      transition: color 0.15s ease;
+    }
+
+    .copy-btn:hover, .copy-btn:active {
+      color: #ffffff;
+    }
+
+    .error-msg {
+      min-height: 16px;
+      margin: -6px 0 8px;
+      color: #ff85a2;
+      font-size: 12px;
+      text-align: center;
+    }
+
+    .toast-msg {
+      position: absolute;
+      top: 10%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(17, 20, 34, 0.95);
+      border: 1px solid #a34e48;
+      color: #fce8d5;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: bold;
+      z-index: 20;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.25s ease;
+    }
+
+    .toast-msg.show {
+      opacity: 1;
+    }
+
+    .modal-btn-group {
+      display: flex;
+      gap: 10px;
+      margin-top: 22px;
+    }
+
+    .btn-cancel {
+      flex: 1;
+      height: 44px;
+      background: #1e2335;
+      border: 1px solid #363e56;
+      border-radius: 8px;
+      color: #d0d6e5;
+      font-size: 14.5px;
+      font-weight: 600;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+
+    .btn-confirm {
+      flex: 1;
+      height: 44px;
+      background: linear-gradient(180deg, #b8333e 0%, #801d24 100%);
+      border: 1.5px solid #d85058;
+      border-radius: 8px;
+      color: #ffffff;
+      font-size: 14.5px;
+      font-weight: 800;
+      box-shadow: 0 4px 12px rgba(184, 51, 62, 0.4);
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+
+    .btn-cancel:active, .btn-confirm:active {
+      transform: scale(0.97);
+    }
+  </style>
+</head>
+<body>
+
+  <main class="canvas-container" aria-label="Trust No Chiikawa 시작 화면">
+    <img class="bg-image" src="트러스트_노_치이카와_배경.png" onerror="this.onerror=null; this.src='트러스트 노 치이카와 배경.png';" alt="배경">
+    <img class="logo-image" src="TRUST_NO_CHIIKAWA.png" onerror="this.onerror=null; this.src='TRUST NO CHIIKAWA.png';" alt="로고">
+
+    <button class="btn-create-room" type="button" id="btn-create">새 방 만들기</button>
+    <button class="btn-join-room" type="button" id="btn-join">방 코드로 참여하기</button>
+
+    <div id="toast-msg" class="toast-msg">방 코드가 복사되었습니다!</div>
+
+    <div class="modal-overlay" id="room-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" hidden>
+      <div class="modal-box">
+        <div class="modal-eyebrow">TRUST NO CHIIKAWA</div>
+        <div class="modal-title" id="modal-title">새 방 만들기</div>
+        <div class="modal-sub" id="modal-sub">친구들과 함께할 추리 게임</div>
+
+        <form id="room-form" novalidate>
+          <div class="field-group">
+            <label class="field-label" for="room-code">방 코드</label>
+            <div class="input-wrapper">
+              <input class="input-field" id="room-code" name="roomCode" type="text" placeholder="방 코드 입력" autocomplete="off" spellcheck="false">
+              <button class="copy-btn" type="button" id="copy-btn" title="방 코드 복사">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="field-group">
+            <label class="field-label" for="nickname">내 닉네임</label>
+            <div class="input-wrapper">
+              <input class="input-field" id="nickname" name="nickname" type="text" placeholder="닉네임 입력" value="치이카와" maxlength="12" autocomplete="nickname">
+            </div>
+          </div>
+
+          <div class="error-msg" id="error-msg"></div>
+
+          <div class="modal-btn-group">
+            <button class="btn-cancel" type="button" id="btn-cancel">취소</button>
+            <button class="btn-confirm" type="submit" id="btn-confirm">방 만들기</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    (() => {
+      const modal = document.getElementById('room-modal');
+      const title = document.getElementById('modal-title');
+      const subTitle = document.getElementById('modal-sub');
+      const roomCode = document.getElementById('room-code');
+      const nickname = document.getElementById('nickname');
+      const copyBtn = document.getElementById('copy-btn');
+      const errorMsg = document.getElementById('error-msg');
+      const confirmBtn = document.getElementById('btn-confirm');
+      const form = document.getElementById('room-form');
+      const toast = document.getElementById('toast-msg');
+      let mode = 'create';
+
+      function generateRoomCode() {
+        return String(Math.floor(1000 + Math.random() * 9000));
+      }
+
+      function showToast(msg) {
+        toast.textContent = msg;
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 2000);
+      }
+
+      function openModal(nextMode) {
+        mode = nextMode;
+        errorMsg.textContent = '';
+
+        if (mode === 'create') {
+          title.textContent = '새 방 만들기';
+          subTitle.textContent = '친구들과 함께할 추리 게임';
+          roomCode.value = generateRoomCode();
+          roomCode.readOnly = true;
+          copyBtn.style.display = 'flex';
+          confirmBtn.textContent = '방 만들기';
+        } else {
+          title.textContent = '방 코드로 참여하기';
+          subTitle.textContent = '전달받은 방 코드를 입력하세요';
+          roomCode.value = '';
+          roomCode.readOnly = false;
+          roomCode.placeholder = '4자리 방 코드 입력';
+          copyBtn.style.display = 'none';
+          confirmBtn.textContent = '입장하기';
+        }
+
+        modal.hidden = false;
+        requestAnimationFrame(() => mode === 'join' ? roomCode.focus() : nickname.focus());
+      }
+
+      function closeModal() {
+        modal.hidden = true;
+        errorMsg.textContent = '';
+      }
+
+      copyBtn.addEventListener('click', () => {
+        if (!roomCode.value) return;
+        navigator.clipboard.writeText(roomCode.value).then(() => {
+          showToast('방 코드가 복사되었습니다!');
+        }).catch(() => {
+          showToast('복사에 실패했습니다.');
+        });
+      });
+
+      document.getElementById('btn-create').addEventListener('click', () => openModal('create'));
+      document.getElementById('btn-join').addEventListener('click', () => openModal('join'));
+      document.getElementById('btn-cancel').addEventListener('click', closeModal);
+
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+      });
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !modal.hidden) closeModal();
+      });
+
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const code = roomCode.value.trim();
+        const nick = nickname.value.trim() || '치이카와';
+
+        if (!code) {
+          errorMsg.textContent = '방 코드를 입력해 주세요.';
+          roomCode.focus();
+          return;
+        }
+        if (!nick) {
+          errorMsg.textContent = '닉네임을 입력해 주세요.';
+          nickname.focus();
+          return;
+        }
+
+        const playerId = 'p' + String(Math.floor(Math.random() * 10000));
+        const params = new URLSearchParams({
+          room: code,
+          pid: playerId,
+          nick: nick
+        });
+
+        location.href = `lobby.html?${params.toString()}`;
+      });
+    })();
+  </script>
+</body>
+</html>

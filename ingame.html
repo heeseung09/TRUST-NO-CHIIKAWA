@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#05040a">
+  <title>TRUST NO CHIIKAWA - 인게임</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Pretendard", "Apple SD Gothic Neo", sans-serif;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      background-color: #05040a;
+      color: #ffffff;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .canvas-container {
+      width: min(100vw, calc(100svh * (360 / 640)));
+      height: min(100svh, calc(100vw * (640 / 360)));
+      aspect-ratio: 360 / 640;
+      position: relative;
+      background-color: #0d0a17;
+      overflow: hidden;
+      box-shadow: 0 0 50px rgba(0, 0, 0, 0.95);
+      container-type: inline-size;
+      display: flex;
+      flex-direction: column;
+      padding: 3.5cqi;
+      gap: 2.5cqi;
+      transition: background-color 0.4s ease, border-color 0.4s ease;
+    }
+
+    .canvas-container.theme-expedition {
+      background-color: #1a080c !important;
+      border: 2px solid #ff4d4f;
+      box-shadow: 0 0 40px rgba(255, 77, 79, 0.3) inset;
+    }
+
+    .canvas-container.theme-village {
+      background-color: #08121a !important;
+      border: 2px solid #2a9d8f;
+      box-shadow: 0 0 40px rgba(42, 157, 143, 0.2) inset;
+    }
+
+    .card {
+      background: #171226;
+      border-radius: 3.5cqi;
+      padding: 3cqi;
+      border: 1.5px solid rgba(255, 133, 162, 0.35);
+      transition: all 0.3s ease;
+    }
+
+    .theme-expedition .card {
+      background: #280d12;
+      border-color: #ff4d4f;
+    }
+
+    .theme-village .card {
+      background: #0f1f28;
+      border-color: #2a9d8f;
+    }
+
+    .dash-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 2cqi;
+      margin-bottom: 2cqi;
+    }
+
+    .dash-box {
+      background: #201933;
+      border: 1px solid #ff85a2;
+      border-radius: 2.5cqi;
+      padding: 1.5cqi;
+      text-align: center;
+    }
+
+    .dash-label { font-size: clamp(0.65rem, 3cqi, 0.75rem); color: #aa9bbd; font-weight: bold; }
+    .dash-val { font-size: clamp(0.95rem, 4.5cqi, 1.15rem); font-weight: 800; color: #ff85a2; }
+
+    .hp-bar-outer { width: 100%; height: 2.2cqi; background: #2a2240; border-radius: 1cqi; overflow: hidden; margin-top: 1cqi; }
+    .hp-bar-inner { height: 100%; transition: width 0.3s ease; }
+    .hp-wall { background: linear-gradient(90deg, #ff85a2, #ff4d4f); }
+    .hp-tower { background: linear-gradient(90deg, #52c41a, #1890ff); }
+
+    .my-card {
+      background: #1a142b;
+      border: 2px solid #ff85a2;
+      border-radius: 3.5cqi;
+      padding: 3cqi;
+    }
+
+    .badge { display: inline-block; padding: 1cqi 2.5cqi; border-radius: 2cqi; font-size: clamp(0.7rem, 3.2cqi, 0.8rem); font-weight: bold; color: #fff; }
+    .badge-citizen { background-color: #2a9d8f; }
+    .badge-monster { background-color: #ff4d4f; }
+
+    .tab-bar { display: flex; background: #221a38; border-radius: 3cqi; padding: 1cqi; gap: 1cqi; }
+    .tab-btn { flex: 1; padding: 2cqi 0; border: none; background: transparent; font-size: clamp(0.75rem, 3.4cqi, 0.85rem); font-weight: 700; color: #887a9c; border-radius: 2.5cqi; cursor: pointer; }
+    .tab-btn.active { background: #ff85a2; color: #ffffff; }
+
+    .tab-content { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+
+    .hand-deck { display: flex; gap: 2.5cqi; overflow-x: auto; padding: 3cqi 1cqi; justify-content: center; }
+    .hand-card { min-width: 18cqi; height: 27cqi; background: #fffbe6; border: 3px solid #ffc107; border-radius: 3cqi; display: flex; align-items: center; justify-content: center; font-size: clamp(1.4rem, 7cqi, 1.8rem); font-weight: 900; color: #222; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+    .hand-card.selected { transform: translateY(-3cqi) scale(1.05); border-color: #ff4d4f; background: #ffe4e8; box-shadow: 0 8px 18px rgba(255, 77, 79, 0.5); }
+
+    .expedition-header-banner {
+      background: linear-gradient(90deg, #ff4d4f 0%, #b30003 100%);
+      color: #ffffff;
+      padding: 2cqi 3cqi;
+      border-radius: 2.5cqi;
+      font-size: clamp(0.8rem, 3.8cqi, 0.95rem);
+      font-weight: 900;
+      text-align: center;
+      margin-bottom: 2cqi;
+      letter-spacing: -0.5px;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 0.9; }
+      50% { opacity: 1; filter: drop-shadow(0 0 8px rgba(255, 77, 79, 0.8)); }
+      100% { opacity: 0.9; }
+    }
+
+    .mobile-log { background: #0c0914; color: #e2e8f0; border-radius: 2.5cqi; padding: 2.5cqi; height: 32cqi; overflow-y: auto; font-size: clamp(0.7rem, 3.2cqi, 0.8rem); font-family: monospace; }
+    
+    .chat-item { margin-bottom: 1.5cqi; line-height: 1.35; word-break: break-all; }
+    .chat-sender-all { font-weight: bold; color: #ff85a2; }
+    .chat-sender-monster { font-weight: bold; color: #ff4d4f; }
+
+    .btn-action {
+      width: 100%;
+      height: 11cqi;
+      min-height: 42px;
+      border: none;
+      border-radius: 3cqi;
+      background: #ff85a2;
+      color: white;
+      font-size: clamp(0.85rem, 4cqi, 1rem);
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .theme-expedition .btn-action { background: linear-gradient(180deg, #ff4d4f 0%, #b30003 100%); }
+    .btn-action:disabled { background: #332a42 !important; color: #776b8a; cursor: not-allowed; }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+<main id="app-canvas" class="canvas-container">
+
+  <div class="card">
+    <div class="dash-grid">
+      <div class="dash-box"><div class="dash-label">라운드</div><div class="dash-val" id="disp-round">1 / 5</div></div>
+      <div class="dash-box"><div class="dash-label">부결 페널티</div><div class="dash-val" id="disp-fail">0회</div></div>
+    </div>
+
+    <div style="font-size: clamp(0.7rem, 3.2cqi, 0.8rem); font-weight: bold; display: flex; justify-content: space-between;">
+      <span>🏰 외곽 성벽 HP</span><span id="text-wall">20 / 20</span>
+    </div>
+    <div class="hp-bar-outer"><div id="bar-wall" class="hp-bar-inner hp-wall" style="width: 100%;"></div></div>
+
+    <div style="font-size: clamp(0.7rem, 3.2cqi, 0.8rem); font-weight: bold; display: flex; justify-content: space-between; margin-top: 1.5cqi;">
+      <span>🗼 감시탑 HP</span><span id="text-tower">25 / 25</span>
+    </div>
+    <div class="hp-bar-outer"><div id="bar-tower" class="hp-bar-inner hp-tower" style="width: 100%;"></div></div>
+  </div>
+
+  <div class="my-card">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <div>
+        <strong id="my-name" style="font-size: clamp(0.9rem, 4.2cqi, 1.05rem);">플레이어</strong>
+        <span id="my-role" class="badge badge-citizen">시민</span>
+        <span id="my-mayor" class="badge" style="background: #ffc107; color: #333;" class="hidden">👑 이장</span>
+      </div>
+    </div>
+    <div style="font-size: clamp(0.72rem, 3.2cqi, 0.82rem); margin-top: 1.5cqi;">
+      🎭 캐릭터: <strong id="my-char">배정 중...</strong> | 🎒 아이템: <strong id="my-item">-</strong>
+    </div>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('tab-play')">🎮 행동판</button>
+    <button class="tab-btn" onclick="switchTab('tab-players')">👥 현황</button>
+    <button class="tab-btn" onclick="switchTab('tab-log')">📜 기록</button>
+    <button class="tab-btn" onclick="switchTab('tab-chat')">💬 채팅</button>
+  </div>
+
+  <div id="tab-play" class="card tab-content">
+    <div id="panel-nominate" class="hidden">
+      <h3 style="font-size: clamp(0.9rem, 4cqi, 1rem); color: #ffb7c5;">📋 경비팀 지명</h3>
+      <p id="nominate-subtext" style="font-size: clamp(0.75rem, 3.4cqi, 0.82rem); color: #aaa; margin-top: 1cqi;">이장이 지명하는 중입니다...</p>
+      <div id="mayor-box" class="hidden" style="margin-top: 2cqi;">
+        <div id="nominate-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5cqi;"></div>
+      </div>
+    </div>
+
+    <div id="panel-vote" class="hidden">
+      <h3 style="font-size: clamp(0.9rem, 4cqi, 1rem); color: #ffb7c5;">🗳️ 찬반 투표</h3>
+      <p id="vote-info" style="font-size: clamp(0.8rem, 3.6cqi, 0.88rem); margin: 2cqi 0;">지명안: -</p>
+      <div style="display: flex; gap: 2cqi;">
+        <button class="btn-action" style="background: #2a9d8f; flex: 1;" onclick="sendVote(true)">👍 찬성</button>
+        <button class="btn-action" style="background: #ff4d4f; flex: 1;" onclick="sendVote(false)">👎 반대</button>
+      </div>
+    </div>
+
+    <div id="panel-action" class="hidden">
+      <div id="exp-area" class="hidden">
+        <div class="expedition-header-banner">⚔️ 성벽 외곽 방어선 (수비조 전용)</div>
+        <p style="font-size: clamp(0.75rem, 3.4cqi, 0.82rem); color: #ffb7c5; text-align: center; margin-bottom: 1cqi;">
+          제출할 수비/사보타주 카드를 터치하세요:
+        </p>
+        <div id="deck-box" class="hand-deck"></div>
+      </div>
+
+      <div id="vil-area" class="hidden" style="font-size: clamp(0.78rem, 3.4cqi, 0.85rem);">
+        <h3 style="font-size: clamp(0.9rem, 4cqi, 1rem); color: #2a9d8f; margin-bottom: 1.5cqi;">🏡 원형 마을 잔류 구역</h3>
+        <label><input type="radio" name="vact" value="PREDICT" checked> 🔮 성벽 피해 예측</label><br>
+        <label><input type="radio" name="vact" value="BLESS"> ✨ 플레이어 축복</label>
+        <div style="margin-top: 2cqi;">
+          축복 대상: <select id="bless-select" style="height: 7cqi; border-radius: 1.5cqi;"></select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-players" class="card tab-content hidden">
+    <div id="player-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 2cqi;"></div>
+  </div>
+
+  <div id="tab-log" class="card tab-content hidden">
+    <div id="log-box" class="mobile-log"></div>
+  </div>
+
+  <div id="tab-chat" class="card tab-content hidden">
+    <div id="chat-msg-box" class="mobile-log" style="background: #120e1f; border: 1px solid #ff85a2;"></div>
+    <div style="display: flex; gap: 1.5cqi; margin-top: 2cqi;">
+      <select id="chat-channel-select" style="height: 8cqi; border-radius: 2cqi; background: #221c36; color: #fff; border: 1px solid #ff85a2; font-size: clamp(0.7rem, 3cqi, 0.8rem);">
+        <option value="ALL">전체</option>
+        <option value="MONSTER">😈 괴물속닥</option>
+      </select>
+      <input type="text" id="chat-text-input" placeholder="메시지 입력..." style="flex: 1; height: 8cqi; border-radius: 2cqi; background: #221c36; color: #fff; border: 1px solid #ff85a2; padding: 0 2cqi; font-size: clamp(0.75rem, 3.2cqi, 0.85rem);" onkeypress="if(event.key==='Enter') sendChatMessage()">
+      <button onclick="sendChatMessage()" style="height: 8cqi; padding: 0 3cqi; background: #ff85a2; color: white; border: none; border-radius: 2cqi; font-weight: bold; cursor: pointer;">전송</button>
+    </div>
+  </div>
+
+  <button id="sticky-btn" class="btn-action" onclick="handleStickyClick()">진행 대기 중</button>
+
+</main>
+
+<script>
+  const urlParams = new URLSearchParams(window.location.search);
+  const roomId = urlParams.get('room') || '1000';
+  const playerId = urlParams.get('pid') || ('p' + String(Math.floor(Math.random()*10000)));
+
+  // 💡 location.hostname이 빈값일 때 'localhost'를 쓰도록 자동 보완!
+  const host = location.hostname || 'localhost';
+  let ws = new WebSocket(`ws://${host}:8000/ws/${roomId}/${playerId}`);
+  let gameState = null;
+  let myState = null;
+  let selectedCards = [];
+
+  ws.onmessage = (evt) => {
+    const data = JSON.parse(evt.data);
+    if (data.type === 'STATE_UPDATE') {
+      renderUI(data);
+    } else if (data.type === 'BATTLE_RESULT') {
+      appendLog(`⚔️ [전투] 방어 ${data.data.total_defense} vs 공격 ${data.data.total_attack} ➔ 피해 ${data.data.final_damage}점`);
+    } else if (data.type === 'CHAT_MESSAGE') {
+      renderChatMessage(data);
+    } else if (data.type === 'ERROR') {
+      alert(data.message);
+    }
+  };
+
+  function appendLog(msg) {
+    const box = document.getElementById('log-box');
+    if (box) {
+      box.innerHTML += `<div>${msg}</div>`;
+      box.scrollTop = box.scrollHeight;
+    }
+  }
+
+  function switchTab(tabId) {
+    ['tab-play', 'tab-players', 'tab-log', 'tab-chat'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.classList.add('hidden');
+    });
+    const target = document.getElementById(tabId);
+    if (target) target.classList.remove('hidden');
+
+    const btns = document.querySelectorAll('.tab-btn');
+    const ids = ['tab-play', 'tab-players', 'tab-log', 'tab-chat'];
+    btns.forEach((btn, idx) => {
+      btn.classList.toggle('active', ids[idx] === tabId);
+    });
+  }
+
+  function sendChatMessage() {
+    const input = document.getElementById('chat-text-input');
+    const channel = document.getElementById('chat-channel-select').value;
+    const text = input.value.trim();
+    if (!text) return;
+
+    ws.send(JSON.stringify({ type: 'CHAT', message: text, channel: channel }));
+    input.value = '';
+  }
+
+  function renderChatMessage(data) {
+    const box = document.getElementById('chat-msg-box');
+    if (!box) return;
+
+    const isMonster = (data.channel === 'MONSTER');
+    let tag = '[전체]';
+    let styleClass = isMonster ? 'chat-sender-monster' : 'chat-sender-all';
+
+    if (isMonster) {
+      tag = '[😈괴물속닥]';
+    } else if (data.is_isolated) {
+      tag = (data.zone === 'EXPEDITION') ? '[🏰성벽속닥]' : '[🏡마을속닥]';
+    }
+
+    box.innerHTML += `<div class="chat-item"><span class="${styleClass}">${tag} ${data.sender_name}(${data.character}):</span> ${data.message}</div>`;
+    box.scrollTop = box.scrollHeight;
+  }
+
+  function renderUI(data) {
+    gameState = data;
+    myState = data.me;
+
+    const canvas = document.getElementById('app-canvas');
+
+    document.getElementById('disp-round').innerText = `${data.current_round} / 5`;
+    document.getElementById('disp-fail').innerText = `${data.failed_votes_count}회`;
+
+    document.getElementById('text-wall').innerText = `${data.wall_hp} / 20`;
+    document.getElementById('bar-wall').style.width = `${Math.max(0, (data.wall_hp / 20) * 100)}%`;
+
+    document.getElementById('text-tower').innerText = `${data.watchtower_hp} / 25`;
+    document.getElementById('bar-tower').style.width = `${Math.max(0, (data.watchtower_hp / 25) * 100)}%`;
+
+    if (myState) {
+      document.getElementById('my-name').innerText = myState.name;
+      document.getElementById('my-char').innerText = myState.character;
+      document.getElementById('my-item').innerText = myState.item || '없음';
+
+      const badge = document.getElementById('my-role');
+      badge.innerText = myState.role === 'CITIZEN' ? '시민' : '괴물 😈';
+      badge.className = `badge badge-${myState.role.toLowerCase()}`;
+
+      document.getElementById('my-mayor').classList.toggle('hidden', !myState.is_mayor);
+    }
+
+    const grid = document.getElementById('player-grid');
+    grid.innerHTML = '';
+    data.players.forEach(p => {
+      grid.innerHTML += `<div style="background:#1e1830; border:1px solid rgba(255,133,162,0.3); border-radius:2.5cqi; padding:2cqi; font-size:clamp(0.72rem, 3.2cqi, 0.8rem);">
+        <strong>${p.name}</strong> (${p.character}) ${p.is_mayor ? '👑':''}<br>
+        <span style="color:#aaa;">구역: ${p.zone} | 손패: ${p.hand_count}장</span>
+      </div>`;
+    });
+
+    document.getElementById('panel-nominate').classList.add('hidden');
+    document.getElementById('panel-vote').classList.add('hidden');
+    document.getElementById('panel-action').classList.add('hidden');
+
+    const stickyBtn = document.getElementById('sticky-btn');
+
+    canvas.classList.remove('theme-expedition', 'theme-village');
+
+    if (data.phase === 'NOMINATING') {
+      document.getElementById('panel-nominate').classList.remove('hidden');
+      if (myState.is_mayor) {
+        document.getElementById('mayor-box').classList.remove('hidden');
+        document.getElementById('nominate-subtext').innerText = '당신은 이번 라운드 이장입니다!';
+        const nGrid = document.getElementById('nominate-grid');
+        nGrid.innerHTML = '';
+        data.players.forEach(p => {
+          nGrid.innerHTML += `<label style="font-size:clamp(0.75rem, 3.2cqi, 0.82rem);"><input type="checkbox" value="${p.player_id}"> ${p.name}</label>`;
+        });
+        stickyBtn.innerText = '📋 경비팀 지명 완료하기';
+        stickyBtn.disabled = false;
+      } else {
+        document.getElementById('mayor-box').classList.add('hidden');
+        document.getElementById('nominate-subtext').innerText = '이장이 경비팀을 지명하는 중입니다...';
+        stickyBtn.innerText = '⏳ 이장 지명 대기 중';
+        stickyBtn.disabled = true;
+      }
+    } else if (data.phase === 'VOTING') {
+      document.getElementById('panel-vote').classList.remove('hidden');
+      document.getElementById('vote-info').innerText = `지명안: ${data.expedition_ids.join(', ')}`;
+      stickyBtn.innerText = '🗳️ 찬반 투표 진행 중';
+      stickyBtn.disabled = true;
+    } else if (data.phase === 'ACTION_PHASE') {
+      document.getElementById('panel-action').classList.remove('hidden');
+      const isExp = data.expedition_ids.includes(playerId);
+      
+      if (isExp) {
+        canvas.classList.add('theme-expedition');
+      } else {
+        canvas.classList.add('theme-village');
+      }
+
+      document.getElementById('exp-area').classList.toggle('hidden', !isExp);
+      document.getElementById('vil-area').classList.toggle('hidden', isExp);
+
+      if (isExp) {
+        const box = document.getElementById('deck-box');
+        box.innerHTML = '';
+        selectedCards = [];
+        myState.hand.forEach(val => {
+          const card = document.createElement('div');
+          card.className = 'hand-card';
+          card.innerText = val;
+          card.onclick = () => {
+            card.classList.toggle('selected');
+            if (card.classList.contains('selected')) selectedCards.push(val);
+            else selectedCards.splice(selectedCards.indexOf(val), 1);
+          };
+          box.appendChild(card);
+        });
+        stickyBtn.innerText = '⚔️ 수비/공격 카드 제출하기';
+      } else {
+        const select = document.getElementById('bless-select');
+        select.innerHTML = '';
+        data.players.forEach(p => {
+          if (p.player_id !== playerId) {
+            select.innerHTML += `<option value="${p.player_id}">${p.name}</option>`;
+          }
+        });
+        stickyBtn.innerText = '🏡 잔류 행동 완료하기';
+      }
+      stickyBtn.disabled = false;
+    }
+  }
+
+  function handleStickyClick() {
+    if (!gameState) return;
+    if (gameState.phase === 'NOMINATING' && myState.is_mayor) {
+      const checked = Array.from(document.querySelectorAll('#nominate-grid input:checked')).map(c => c.value);
+      const req = gameState.current_round === 1 ? 3 : 4;
+      if (checked.length !== req) { alert(`정확히 ${req}명을 선택하세요!`); return; }
+      ws.send(JSON.stringify({ type: 'NOMINATE', target_ids: checked }));
+    } else if (gameState.phase === 'ACTION_PHASE') {
+      const isExp = gameState.expedition_ids.includes(playerId);
+      if (isExp) {
+        ws.send(JSON.stringify({ type: 'SUBMIT_ACTION', cards: selectedCards }));
+      } else {
+        const actVal = document.querySelector('input[name="vact"]:checked').value;
+        const targetId = document.getElementById('bless-select').value;
+        ws.send(JSON.stringify({ type: 'SUBMIT_ACTION', action: actVal, target_id: targetId }));
+      }
+    }
+  }
+
+  function sendVote(voteVal) {
+    ws.send(JSON.stringify({ type: 'VOTE', vote: voteVal }));
+  }
+</script>
+</body>
+</html>
