@@ -4,13 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#05040a">
-  <title>TRUST NO CHIIKAWA - 인게임</title>
+  <title>TRUST NO CHIIKAWA - 게임 플레이</title>
   <style>
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Pretendard", "Apple SD Gothic Neo", sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Pretendard", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
       user-select: none;
       -webkit-user-select: none;
       -webkit-tap-highlight-color: transparent;
@@ -28,449 +28,446 @@
     }
 
     .canvas-container {
-      width: min(100vw, calc(100svh * (360 / 640)));
-      height: min(100svh, calc(100vw * (640 / 360)));
+      width: min(100vw, calc(100vh * (360 / 640)));
+      height: min(100vh, calc(100vw * (640 / 360)));
       aspect-ratio: 360 / 640;
       position: relative;
-      background-color: #0d0a17;
+      background-color: #07060c;
       overflow: hidden;
       box-shadow: 0 0 50px rgba(0, 0, 0, 0.95);
-      container-type: inline-size;
+      isolation: isolate;
       display: flex;
       flex-direction: column;
-      padding: 3.5cqi;
-      gap: 2.5cqi;
-      transition: background-color 0.4s ease, border-color 0.4s ease;
     }
 
-    .canvas-container.theme-expedition {
-      background-color: #1a080c !important;
-      border: 2px solid #ff4d4f;
-      box-shadow: 0 0 40px rgba(255, 77, 79, 0.3) inset;
-    }
-
-    .canvas-container.theme-village {
-      background-color: #08121a !important;
-      border: 2px solid #2a9d8f;
-      box-shadow: 0 0 40px rgba(42, 157, 143, 0.2) inset;
-    }
-
-    .card {
-      background: #171226;
-      border-radius: 3.5cqi;
-      padding: 3cqi;
-      border: 1.5px solid rgba(255, 133, 162, 0.35);
-      transition: all 0.3s ease;
-    }
-
-    .theme-expedition .card {
-      background: #280d12;
-      border-color: #ff4d4f;
-    }
-
-    .theme-village .card {
-      background: #0f1f28;
-      border-color: #2a9d8f;
-    }
-
-    .dash-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 2cqi;
-      margin-bottom: 2cqi;
-    }
-
-    .dash-box {
-      background: #201933;
-      border: 1px solid #ff85a2;
-      border-radius: 2.5cqi;
-      padding: 1.5cqi;
-      text-align: center;
-    }
-
-    .dash-label { font-size: clamp(0.65rem, 3cqi, 0.75rem); color: #aa9bbd; font-weight: bold; }
-    .dash-val { font-size: clamp(0.95rem, 4.5cqi, 1.15rem); font-weight: 800; color: #ff85a2; }
-
-    .hp-bar-outer { width: 100%; height: 2.2cqi; background: #2a2240; border-radius: 1cqi; overflow: hidden; margin-top: 1cqi; }
-    .hp-bar-inner { height: 100%; transition: width 0.3s ease; }
-    .hp-wall { background: linear-gradient(90deg, #ff85a2, #ff4d4f); }
-    .hp-tower { background: linear-gradient(90deg, #52c41a, #1890ff); }
-
-    .my-card {
-      background: #1a142b;
-      border: 2px solid #ff85a2;
-      border-radius: 3.5cqi;
-      padding: 3cqi;
-    }
-
-    .badge { display: inline-block; padding: 1cqi 2.5cqi; border-radius: 2cqi; font-size: clamp(0.7rem, 3.2cqi, 0.8rem); font-weight: bold; color: #fff; }
-    .badge-citizen { background-color: #2a9d8f; }
-    .badge-monster { background-color: #ff4d4f; }
-
-    .tab-bar { display: flex; background: #221a38; border-radius: 3cqi; padding: 1cqi; gap: 1cqi; }
-    .tab-btn { flex: 1; padding: 2cqi 0; border: none; background: transparent; font-size: clamp(0.75rem, 3.4cqi, 0.85rem); font-weight: 700; color: #887a9c; border-radius: 2.5cqi; cursor: pointer; }
-    .tab-btn.active { background: #ff85a2; color: #ffffff; }
-
-    .tab-content { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
-
-    .hand-deck { display: flex; gap: 2.5cqi; overflow-x: auto; padding: 3cqi 1cqi; justify-content: center; }
-    .hand-card { min-width: 18cqi; height: 27cqi; background: #fffbe6; border: 3px solid #ffc107; border-radius: 3cqi; display: flex; align-items: center; justify-content: center; font-size: clamp(1.4rem, 7cqi, 1.8rem); font-weight: 900; color: #222; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
-    .hand-card.selected { transform: translateY(-3cqi) scale(1.05); border-color: #ff4d4f; background: #ffe4e8; box-shadow: 0 8px 18px rgba(255, 77, 79, 0.5); }
-
-    .expedition-header-banner {
-      background: linear-gradient(90deg, #ff4d4f 0%, #b30003 100%);
-      color: #ffffff;
-      padding: 2cqi 3cqi;
-      border-radius: 2.5cqi;
-      font-size: clamp(0.8rem, 3.8cqi, 0.95rem);
-      font-weight: 900;
-      text-align: center;
-      margin-bottom: 2cqi;
-      letter-spacing: -0.5px;
-      animation: pulse 2s infinite;
-    }
-
-    @keyframes pulse {
-      0% { opacity: 0.9; }
-      50% { opacity: 1; filter: drop-shadow(0 0 8px rgba(255, 77, 79, 0.8)); }
-      100% { opacity: 0.9; }
-    }
-
-    .mobile-log { background: #0c0914; color: #e2e8f0; border-radius: 2.5cqi; padding: 2.5cqi; height: 32cqi; overflow-y: auto; font-size: clamp(0.7rem, 3.2cqi, 0.8rem); font-family: monospace; }
-    
-    .chat-item { margin-bottom: 1.5cqi; line-height: 1.35; word-break: break-all; }
-    .chat-sender-all { font-weight: bold; color: #ff85a2; }
-    .chat-sender-monster { font-weight: bold; color: #ff4d4f; }
-
-    .btn-action {
+    .bg-image {
+      position: absolute;
+      top: 0;
+      left: 0;
       width: 100%;
-      height: 11cqi;
-      min-height: 42px;
-      border: none;
-      border-radius: 3cqi;
-      background: #ff85a2;
-      color: white;
-      font-size: clamp(0.85rem, 4cqi, 1rem);
+      height: 100%;
+      object-fit: fill;
+      z-index: 1;
+      pointer-events: none;
+      opacity: 0.35;
+    }
+
+    .game-header {
+      position: relative;
+      z-index: 5;
+      padding: 12px 14px 8px;
+      background: rgba(13, 16, 28, 0.9);
+      border-bottom: 1.5px solid rgba(163, 78, 72, 0.3);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .round-badge {
+      font-size: 13px;
       font-weight: 800;
+      color: #ff9ebb;
+      background: rgba(255, 120, 150, 0.12);
+      padding: 3px 8px;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 120, 150, 0.25);
+    }
+
+    .wall-status-bar {
+      position: relative;
+      z-index: 5;
+      display: flex;
+      gap: 8px;
+      padding: 8px 14px;
+      background: rgba(8, 10, 18, 0.85);
+    }
+
+    .hp-box {
+      flex: 1;
+      background: rgba(20, 24, 38, 0.85);
+      border: 1px solid rgba(163, 78, 72, 0.25);
+      border-radius: 8px;
+      padding: 6px 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .hp-label { font-size: 11px; color: #9ba3b7; font-weight: 600; }
+    .hp-value { font-size: 15px; font-weight: 900; color: #ff6b6b; }
+    .hp-value.inner { color: #52c41a; }
+
+    .role-card {
+      position: relative;
+      z-index: 5;
+      margin: 8px 14px;
+      padding: 8px 12px;
+      background: linear-gradient(135deg, rgba(30, 20, 32, 0.9) 0%, rgba(15, 18, 30, 0.9) 100%);
+      border: 1.5px solid #a34e48;
+      border-radius: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .role-title { font-size: 12px; color: #d0d6e5; }
+    .role-secret { font-size: 13.5px; font-weight: 800; color: #ffd700; }
+    .role-secret.monster { color: #ff4d4f; }
+
+    .main-stage {
+      position: relative;
+      z-index: 5;
+      flex: 1;
+      margin: 0 14px 10px;
+      padding: 10px;
+      background: rgba(15, 18, 30, 0.9);
+      border: 1px solid rgba(163, 78, 72, 0.25);
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .stage-title {
+      font-size: 13px;
+      font-weight: 800;
+      color: #f6e8db;
+      margin-bottom: 8px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .content-area {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .action-btn-group {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .game-btn {
+      flex: 1;
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 800;
+      border: none;
+      cursor: pointer;
+      color: #fff;
+      transition: all 0.2s;
+    }
+
+    .btn-yes { background: #2e7d32; }
+    .btn-no { background: #c62828; }
+    .btn-sub { background: #1565c0; }
+    .game-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .hand-cards {
+      display: flex;
+      gap: 6px;
+      margin-top: 6px;
+    }
+
+    .card-item {
+      flex: 1;
+      height: 42px;
+      background: #23293e;
+      border: 1.5px solid #3d486b;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 16px;
+      color: #fff;
       cursor: pointer;
     }
-    .theme-expedition .btn-action { background: linear-gradient(180deg, #ff4d4f 0%, #b30003 100%); }
-    .btn-action:disabled { background: #332a42 !important; color: #776b8a; cursor: not-allowed; }
 
-    .hidden { display: none !important; }
+    .card-item.selected {
+      border-color: #ff85a2;
+      background: #8e2632;
+    }
+
+    .log-box {
+      height: 75px;
+      overflow-y: auto;
+      background: rgba(0,0,0,0.5);
+      padding: 6px 8px;
+      font-size: 11px;
+      color: #aaa;
+      border-radius: 6px;
+      margin-top: 6px;
+      line-height: 1.4;
+    }
+
+    .select-item {
+      padding: 8px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 6px;
+      font-size: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+    }
+
+    .select-item.selected {
+      border-color: #ff85a2;
+      background: rgba(142, 38, 50, 0.4);
+    }
   </style>
 </head>
 <body>
 
-<main id="app-canvas" class="canvas-container">
+  <main class="canvas-container">
+    <img class="bg-image" src="트러스트_노_치이카와_배경.png" onerror="this.onerror=null; this.src='트러스트 노 치이카와 배경.png';" alt="배경">
 
-  <div class="card">
-    <div class="dash-grid">
-      <div class="dash-box"><div class="dash-label">라운드</div><div class="dash-val" id="disp-round">1 / 5</div></div>
-      <div class="dash-box"><div class="dash-label">부결 페널티</div><div class="dash-val" id="disp-fail">0회</div></div>
-    </div>
+    <header class="game-header">
+      <div class="round-badge" id="round-text">ROUND 1 / 5</div>
+      <div style="font-size: 11px; color: #8890a3;">부결 횟수: <span id="fail-count" style="color:#ff6b6b; font-weight:bold;">0</span></div>
+    </header>
 
-    <div style="font-size: clamp(0.7rem, 3.2cqi, 0.8rem); font-weight: bold; display: flex; justify-content: space-between;">
-      <span>🏰 외곽 성벽 HP</span><span id="text-wall">20 / 20</span>
-    </div>
-    <div class="hp-bar-outer"><div id="bar-wall" class="hp-bar-inner hp-wall" style="width: 100%;"></div></div>
-
-    <div style="font-size: clamp(0.7rem, 3.2cqi, 0.8rem); font-weight: bold; display: flex; justify-content: space-between; margin-top: 1.5cqi;">
-      <span>🗼 감시탑 HP</span><span id="text-tower">25 / 25</span>
-    </div>
-    <div class="hp-bar-outer"><div id="bar-tower" class="hp-bar-inner hp-tower" style="width: 100%;"></div></div>
-  </div>
-
-  <div class="my-card">
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-      <div>
-        <strong id="my-name" style="font-size: clamp(0.9rem, 4.2cqi, 1.05rem);">플레이어</strong>
-        <span id="my-role" class="badge badge-citizen">시민</span>
-        <span id="my-mayor" class="badge" style="background: #ffc107; color: #333;" class="hidden">👑 이장</span>
+    <section class="wall-status-bar">
+      <div class="hp-box">
+        <span class="hp-label">🛡️ 외벽 HP</span>
+        <span class="hp-value" id="wall-hp">20</span>
       </div>
-    </div>
-    <div style="font-size: clamp(0.72rem, 3.2cqi, 0.82rem); margin-top: 1.5cqi;">
-      🎭 캐릭터: <strong id="my-char">배정 중...</strong> | 🎒 아이템: <strong id="my-item">-</strong>
-    </div>
-  </div>
-
-  <div class="tab-bar">
-    <button class="tab-btn active" onclick="switchTab('tab-play')">🎮 행동판</button>
-    <button class="tab-btn" onclick="switchTab('tab-players')">👥 현황</button>
-    <button class="tab-btn" onclick="switchTab('tab-log')">📜 기록</button>
-    <button class="tab-btn" onclick="switchTab('tab-chat')">💬 채팅</button>
-  </div>
-
-  <div id="tab-play" class="card tab-content">
-    <div id="panel-nominate" class="hidden">
-      <h3 style="font-size: clamp(0.9rem, 4cqi, 1rem); color: #ffb7c5;">📋 경비팀 지명</h3>
-      <p id="nominate-subtext" style="font-size: clamp(0.75rem, 3.4cqi, 0.82rem); color: #aaa; margin-top: 1cqi;">이장이 지명하는 중입니다...</p>
-      <div id="mayor-box" class="hidden" style="margin-top: 2cqi;">
-        <div id="nominate-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5cqi;"></div>
+      <div class="hp-box">
+        <span class="hp-label">🏰 내벽 HP</span>
+        <span class="hp-value inner" id="watchtower-hp">25</span>
       </div>
-    </div>
+    </section>
 
-    <div id="panel-vote" class="hidden">
-      <h3 style="font-size: clamp(0.9rem, 4cqi, 1rem); color: #ffb7c5;">🗳️ 찬반 투표</h3>
-      <p id="vote-info" style="font-size: clamp(0.8rem, 3.6cqi, 0.88rem); margin: 2cqi 0;">지명안: -</p>
-      <div style="display: flex; gap: 2cqi;">
-        <button class="btn-action" style="background: #2a9d8f; flex: 1;" onclick="sendVote(true)">👍 찬성</button>
-        <button class="btn-action" style="background: #ff4d4f; flex: 1;" onclick="sendVote(false)">👎 반대</button>
-      </div>
-    </div>
+    <section class="role-card">
+      <span class="role-title">내 정체 & 아이템</span>
+      <span class="role-secret" id="role-text">확인 중...</span>
+    </section>
 
-    <div id="panel-action" class="hidden">
-      <div id="exp-area" class="hidden">
-        <div class="expedition-header-banner">⚔️ 성벽 외곽 방어선 (수비조 전용)</div>
-        <p style="font-size: clamp(0.75rem, 3.4cqi, 0.82rem); color: #ffb7c5; text-align: center; margin-bottom: 1cqi;">
-          제출할 수비/사보타주 카드를 터치하세요:
-        </p>
-        <div id="deck-box" class="hand-deck"></div>
+    <section class="main-stage">
+      <div class="stage-title">
+        <span id="phase-title">페이즈 진행 중</span>
+        <span id="mayor-badge" style="font-size:11px; color:#ffd700;"></span>
       </div>
 
-      <div id="vil-area" class="hidden" style="font-size: clamp(0.78rem, 3.4cqi, 0.85rem);">
-        <h3 style="font-size: clamp(0.9rem, 4cqi, 1rem); color: #2a9d8f; margin-bottom: 1.5cqi;">🏡 원형 마을 잔류 구역</h3>
-        <label><input type="radio" name="vact" value="PREDICT" checked> 🔮 성벽 피해 예측</label><br>
-        <label><input type="radio" name="vact" value="BLESS"> ✨ 플레이어 축복</label>
-        <div style="margin-top: 2cqi;">
-          축복 대상: <select id="bless-select" style="height: 7cqi; border-radius: 1.5cqi;"></select>
-        </div>
+      <div class="content-area" id="stage-content">
+        <!-- 현재 페이즈별 동적 HTML 삽입 -->
       </div>
-    </div>
-  </div>
 
-  <div id="tab-players" class="card tab-content hidden">
-    <div id="player-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 2cqi;"></div>
-  </div>
-
-  <div id="tab-log" class="card tab-content hidden">
-    <div id="log-box" class="mobile-log"></div>
-  </div>
-
-  <div id="tab-chat" class="card tab-content hidden">
-    <div id="chat-msg-box" class="mobile-log" style="background: #120e1f; border: 1px solid #ff85a2;"></div>
-    <div style="display: flex; gap: 1.5cqi; margin-top: 2cqi;">
-      <select id="chat-channel-select" style="height: 8cqi; border-radius: 2cqi; background: #221c36; color: #fff; border: 1px solid #ff85a2; font-size: clamp(0.7rem, 3cqi, 0.8rem);">
-        <option value="ALL">전체</option>
-        <option value="MONSTER">😈 괴물속닥</option>
-      </select>
-      <input type="text" id="chat-text-input" placeholder="메시지 입력..." style="flex: 1; height: 8cqi; border-radius: 2cqi; background: #221c36; color: #fff; border: 1px solid #ff85a2; padding: 0 2cqi; font-size: clamp(0.75rem, 3.2cqi, 0.85rem);" onkeypress="if(event.key==='Enter') sendChatMessage()">
-      <button onclick="sendChatMessage()" style="height: 8cqi; padding: 0 3cqi; background: #ff85a2; color: white; border: none; border-radius: 2cqi; font-weight: bold; cursor: pointer;">전송</button>
-    </div>
-</div>
-
-  <button id="sticky-btn" class="btn-action" onclick="handleStickyClick()">진행 대기 중</button>
-
-</main>
+      <div class="log-box" id="game-log">게임 서버에 접속 중입니다...</div>
+    </section>
+  </main>
 
 <script>
-  const urlParams = new URLSearchParams(window.location.search);
-  const roomId = urlParams.get('room') || '1000';
-  const playerId = urlParams.get('pid') || ('p' + String(Math.floor(Math.random()*10000)));
+  (() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const roomId = urlParams.get('room') || '1000';
+    const playerId = urlParams.get('pid') || ('p' + String(Math.floor(Math.random() * 10000)));
+    const initNick = urlParams.get('nick') || '치이카와';
 
-  // 💡 location.hostname이 빈값일 때 'localhost'를 쓰도록 자동 보완!
-  const host = location.hostname || 'localhost';
-  let ws = new WebSocket(`ws://${host}:8000/ws/${roomId}/${playerId}`);
-  let gameState = null;
-  let myState = null;
-  let selectedCards = [];
+    const roundText = document.getElementById('round-text');
+    const failCountText = document.getElementById('fail-count');
+    const wallHpText = document.getElementById('wall-hp');
+    const watchtowerHpText = document.getElementById('watchtower-hp');
+    const roleText = document.getElementById('role-text');
+    const phaseTitle = document.getElementById('phase-title');
+    const mayorBadge = document.getElementById('mayor-badge');
+    const stageContent = document.getElementById('stage-content');
+    const gameLog = document.getElementById('game-log');
 
-  ws.onmessage = (evt) => {
-    const data = JSON.parse(evt.data);
-    if (data.type === 'STATE_UPDATE') {
-      renderUI(data);
-    } else if (data.type === 'BATTLE_RESULT') {
-      appendLog(`⚔️ [전투] 방어 ${data.data.total_defense} vs 공격 ${data.data.total_attack} ➔ 피해 ${data.data.final_damage}점`);
-    } else if (data.type === 'CHAT_MESSAGE') {
-      renderChatMessage(data);
-    } else if (data.type === 'ERROR') {
-      alert(data.message);
-    }
-  };
+    let currentGameState = null;
+    let selectedTargets = [];
+    let selectedCard = null;
 
-  function appendLog(msg) {
-    const box = document.getElementById('log-box');
-    if (box) {
-    box.innerHTML += `<div>${msg}</div>`;
-    box.scrollTop = box.scrollHeight;
-  }
-  }
-
-  function switchTab(tabId) {
-    ['tab-play', 'tab-players', 'tab-log', 'tab-chat'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.classList.add('hidden');
-    });
-    const target = document.getElementById(tabId);
-    if (target) target.classList.remove('hidden');
-
-    const btns = document.querySelectorAll('.tab-btn');
-    const ids = ['tab-play', 'tab-players', 'tab-log', 'tab-chat'];
-    btns.forEach((btn, idx) => {
-      btn.classList.toggle('active', ids[idx] === tabId);
-    });
-  }
-
-  function sendChatMessage() {
-    const input = document.getElementById('chat-text-input');
-    const channel = document.getElementById('chat-channel-select').value;
-    const text = input.value.trim();
-    if (!text) return;
-
-    ws.send(JSON.stringify({ type: 'CHAT', message: text, channel: channel }));
-    input.value = '';
-  }
-
-  function renderChatMessage(data) {
-    const box = document.getElementById('chat-msg-box');
-    if (!box) return;
-
-    const isMonster = (data.channel === 'MONSTER');
-    let tag = '[전체]';
-    let styleClass = isMonster ? 'chat-sender-monster' : 'chat-sender-all';
-
-    if (isMonster) {
-      tag = '[😈괴물속닥]';
-    } else if (data.is_isolated) {
-      tag = (data.zone === 'EXPEDITION') ? '[🏰성벽속닥]' : '[🏡마을속닥]';
+    function log(msg) {
+      gameLog.innerHTML += `<div>${msg}</div>`;
+      gameLog.scrollTop = gameLog.scrollHeight;
     }
 
-    box.innerHTML += `<div class="chat-item"><span class="${styleClass}">${tag} ${data.sender_name}(${data.character}):</span> ${data.message}</div>`;
-    box.scrollTop = box.scrollHeight;
-  }
+    const RENDER_HTTP = 'https://trust-no-chiikawa.onrender.com';
+    const RENDER_WS = 'wss://trust-no-chiikawa.onrender.com';
 
-  function renderUI(data) {
-    gameState = data;
-    myState = data.me;
+    const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.hostname === '';
+    const HTTP_URL = isLocal ? `http://${location.hostname || 'localhost'}:8000` : RENDER_HTTP;
+    const WS_URL = isLocal ? `ws://${location.hostname || 'localhost'}:8000` : RENDER_WS;
 
-    const canvas = document.getElementById('app-canvas');
+    fetch(`${HTTP_URL}/health`).catch(() => {});
 
-    document.getElementById('disp-round').innerText = `${data.current_round} / 5`;
-    document.getElementById('disp-fail').innerText = `${data.failed_votes_count}회`;
+    let ws = new WebSocket(`${WS_URL}/ws/${roomId}/${playerId}`);
 
-    document.getElementById('text-wall').innerText = `${data.wall_hp} / 20`;
-    document.getElementById('bar-wall').style.width = `${Math.max(0, (data.wall_hp / 20) * 100)}%`;
+    ws.onopen = () => {
+      log('서버 연결 성공');
+      ws.send(JSON.stringify({ type: 'JOIN', name: initNick }));
+    };
 
-    document.getElementById('text-tower').innerText = `${data.watchtower_hp} / 25`;
-    document.getElementById('bar-tower').style.width = `${Math.max(0, (data.watchtower_hp / 25) * 100)}%`;
+    ws.onmessage = (evt) => {
+      const data = JSON.parse(evt.data);
 
-    if (myState) {
-      document.getElementById('my-name').innerText = myState.name;
-      document.getElementById('my-char').innerText = myState.character;
-      document.getElementById('my-item').innerText = myState.item || '없음';
-
-      const badge = document.getElementById('my-role');
-      badge.innerText = myState.role === 'CITIZEN' ? '시민' : '괴물 😈';
-      badge.className = `badge badge-${myState.role.toLowerCase()}`;
-
-      document.getElementById('my-mayor').classList.toggle('hidden', !myState.is_mayor);
-    }
-
-    const grid = document.getElementById('player-grid');
-    grid.innerHTML = '';
-    data.players.forEach(p => {
-      grid.innerHTML += `<div style="background:#1e1830; border:1px solid rgba(255,133,162,0.3); border-radius:2.5cqi; padding:2cqi; font-size:clamp(0.72rem, 3.2cqi, 0.8rem);">
-        <strong>${p.name}</strong> (${p.character}) ${p.is_mayor ? '👑':''}<br>
-        <span style="color:#aaa;">구역: ${p.zone} | 손패: ${p.hand_count}장</span>
-      </div>`;
-    });
-
-    document.getElementById('panel-nominate').classList.add('hidden');
-    document.getElementById('panel-vote').classList.add('hidden');
-    document.getElementById('panel-action').classList.add('hidden');
-
-    const stickyBtn = document.getElementById('sticky-btn');
-
-    canvas.classList.remove('theme-expedition', 'theme-village');
-
-    if (data.phase === 'NOMINATING') {
-      document.getElementById('panel-nominate').classList.remove('hidden');
-      if (myState.is_mayor) {
-        document.getElementById('mayor-box').classList.remove('hidden');
-        document.getElementById('nominate-subtext').innerText = '당신은 이번 라운드 이장입니다!';
-        const nGrid = document.getElementById('nominate-grid');
-        nGrid.innerHTML = '';
-        data.players.forEach(p => {
-          nGrid.innerHTML += `<label style="font-size:clamp(0.75rem, 3.2cqi, 0.82rem);"><input type="checkbox" value="${p.player_id}"> ${p.name}</label>`;
-        });
-        stickyBtn.innerText = '📋 경비팀 지명 완료하기';
-        stickyBtn.disabled = false;
-      } else {
-        document.getElementById('mayor-box').classList.add('hidden');
-        document.getElementById('nominate-subtext').innerText = '이장이 경비팀을 지명하는 중입니다...';
-        stickyBtn.innerText = '⏳ 이장 지명 대기 중';
-        stickyBtn.disabled = true;
+      if (data.type === 'STATE_UPDATE') {
+        currentGameState = data;
+        renderGameState(data);
+      } else if (data.type === 'VOTE_RESULT') {
+        const res = data.data;
+        log(`[투표 결과] ${res.passed ? '✅ 가결' : '❌ 부결'} (찬성: ${res.yes}, 반대: ${res.no})`);
+      } else if (data.type === 'BATTLE_RESULT') {
+        const res = data.data;
+        log(`[결산] 외벽 HP: ${res.wall_hp}, 내벽 HP: ${res.watchtower_hp}`);
       }
-    } else if (data.phase === 'VOTING') {
-      document.getElementById('panel-vote').classList.remove('hidden');
-      document.getElementById('vote-info').innerText = `지명안: ${data.expedition_ids.join(', ')}`;
-      stickyBtn.innerText = '🗳️ 찬반 투표 진행 중';
-      stickyBtn.disabled = true;
-    } else if (data.phase === 'ACTION_PHASE') {
-      document.getElementById('panel-action').classList.remove('hidden');
-      const isExp = data.expedition_ids.includes(playerId);
-      
-      if (isExp) {
-        canvas.classList.add('theme-expedition');
-      } else {
-        canvas.classList.add('theme-village');
-      }
+    };
 
-      document.getElementById('exp-area').classList.toggle('hidden', !isExp);
-      document.getElementById('vil-area').classList.toggle('hidden', isExp);
+    ws.onclose = () => log('서버 연결 종료');
 
-      if (isExp) {
-        const box = document.getElementById('deck-box');
-        box.innerHTML = '';
-        selectedCards = [];
-        myState.hand.forEach(val => {
-          const card = document.createElement('div');
-          card.className = 'hand-card';
-          card.innerText = val;
-          card.onclick = () => {
-            card.classList.toggle('selected');
-            if (card.classList.contains('selected')) selectedCards.push(val);
-            else selectedCards.splice(selectedCards.indexOf(val), 1);
+    function renderGameState(state) {
+      roundText.textContent = `ROUND ${state.current_round} / 5`;
+      failCountText.textContent = state.failed_votes_count || 0;
+      wallHpText.textContent = state.wall_hp ?? 20;
+      watchtowerHpText.textContent = state.watchtower_hp ?? 25;
+
+      const me = state.me || {};
+      const isMonster = me.role === 'MONSTER';
+      roleText.textContent = `${isMonster ? '😈 괴물' : '🛡️ 시민'} (${me.item || '아이템 없음'})`;
+      roleText.className = `role-secret ${isMonster ? 'monster' : ''}`;
+
+      mayorBadge.textContent = me.is_mayor ? '👑 내가 이장' : '';
+
+      const phase = state.phase;
+      stageContent.innerHTML = '';
+
+      if (phase === 'NOMINATING') {
+        phaseTitle.textContent = '📜 토벌조 지명 페이즈';
+        const reqCount = state.current_round === 1 ? 3 : 4;
+
+        if (me.is_mayor) {
+          stageContent.innerHTML = `
+            <div style="font-size:12px; margin-bottom:6px;">토벌조로 지명할 플레이어 ${reqCount}명을 선택하세요:</div>
+            <div id="nominate-list" style="display:flex; flex-direction:column; gap:4px;"></div>
+            <button class="game-btn btn-sub" id="btn-nominate" style="margin-top:8px;" disabled>지명 완료</button>
+          `;
+
+          const nomList = document.getElementById('nominate-list');
+          selectedTargets = [];
+
+          state.players.forEach(p => {
+            const item = document.createElement('div');
+            item.className = 'select-item';
+            item.innerHTML = `<span>${p.name}</span><span>${p.is_mayor ? '👑' : ''}</span>`;
+            item.onclick = () => {
+              if (selectedTargets.includes(p.player_id)) {
+                selectedTargets = selectedTargets.filter(id => id !== p.player_id);
+                item.classList.remove('selected');
+              } else {
+                if (selectedTargets.length < reqCount) {
+                  selectedTargets.push(p.player_id);
+                  item.classList.add('selected');
+                }
+              }
+              document.getElementById('btn-nominate').disabled = (selectedTargets.length !== reqCount);
+            };
+            nomList.appendChild(item);
+          });
+
+          document.getElementById('btn-nominate').onclick = () => {
+            ws.send(JSON.stringify({ type: 'NOMINATE', target_ids: selectedTargets }));
           };
-          box.appendChild(card);
-        });
-        stickyBtn.innerText = '⚔️ 수비/공격 카드 제출하기';
-      } else {
-        const select = document.getElementById('bless-select');
-        select.innerHTML = '';
-        data.players.forEach(p => {
-          if (p.player_id !== playerId) {
-            select.innerHTML += `<option value="${p.player_id}">${p.name}</option>`;
-          }
-        });
-        stickyBtn.innerText = '🏡 잔류 행동 완료하기';
-      }
-      stickyBtn.disabled = false;
-    }
-  }
+        } else {
+          stageContent.innerHTML = `<div style="font-size:13px; text-align:center; padding:20px; color:#aaa;">이장이 토벌조를 지명하는 중입니다...</div>`;
+        }
 
-  function handleStickyClick() {
-    if (!gameState) return;
-    if (gameState.phase === 'NOMINATING' && myState.is_mayor) {
-      const checked = Array.from(document.querySelectorAll('#nominate-grid input:checked')).map(c => c.value);
-      const req = gameState.current_round === 1 ? 3 : 4;
-      if (checked.length !== req) { alert(`정확히 ${req}명을 선택하세요!`); return; }
-      ws.send(JSON.stringify({ type: 'NOMINATE', target_ids: checked }));
-    } else if (gameState.phase === 'ACTION_PHASE') {
-      const isExp = gameState.expedition_ids.includes(playerId);
-      if (isExp) {
-        ws.send(JSON.stringify({ type: 'SUBMIT_ACTION', cards: selectedCards }));
-      } else {
-        const actVal = document.querySelector('input[name="vact"]:checked').value;
-        const targetId = document.getElementById('bless-select').value;
-        ws.send(JSON.stringify({ type: 'SUBMIT_ACTION', action: actVal, target_id: targetId }));
+      } else if (phase === 'VOTING') {
+        phaseTitle.textContent = '🗳️ 찬반 투표 페이즈';
+        const expNames = state.players
+          .filter(p => (state.expedition_ids || []).includes(p.player_id))
+          .map(p => p.name).join(', ');
+
+        stageContent.innerHTML = `
+          <div style="font-size:12px; margin-bottom:8px;">지명된 토벌조: <strong style="color:#ff9ebb;">${expNames}</strong></div>
+          <div style="font-size:12px; text-align:center; margin-bottom:12px;">이 구성에 동의하십니까?</div>
+          <div class="action-btn-group">
+            <button class="game-btn btn-yes" id="vote-yes">찬성 ⭕</button>
+            <button class="game-btn btn-no" id="vote-no">반대 ❌</button>
+          </div>
+        `;
+
+        document.getElementById('vote-yes').onclick = () => sendVote(true);
+        document.getElementById('vote-no').onclick = () => sendVote(false);
+
+      } else if (phase === 'ACTION_PHASE') {
+        phaseTitle.textContent = '⚔️ 행동 제출 페이즈';
+        const isExpedition = me.zone === 'EXPEDITION';
+
+        if (isExpedition) {
+          stageContent.innerHTML = `
+            <div style="font-size:12px; color:#ff9ebb; font-weight:bold;">당신은 [토벌조]입니다!</div>
+            <div style="font-size:11px; color:#aaa;">제출할 카드를 손패에서 1장 선택하세요.</div>
+            <div class="hand-cards" id="hand-list"></div>
+            <button class="game-btn btn-sub" id="btn-submit-card" style="margin-top:10px;" disabled>카드 제출</button>
+          `;
+
+          const handList = document.getElementById('hand-list');
+          selectedCard = null;
+
+          (me.hand || []).forEach(c => {
+            const cardEl = document.createElement('div');
+            cardEl.className = 'card-item';
+            cardEl.textContent = c;
+            cardEl.onclick = () => {
+              document.querySelectorAll('.card-item').forEach(el => el.classList.remove('selected'));
+              cardEl.classList.add('selected');
+              selectedCard = c;
+              document.getElementById('btn-submit-card').disabled = false;
+            };
+            handList.appendChild(cardEl);
+          });
+
+          document.getElementById('btn-submit-card').onclick = () => {
+            if (selectedCard !== null) {
+              ws.send(JSON.stringify({ type: 'SUBMIT_ACTION', cards: [selectedCard], card_types: ['DEFENSE'] }));
+              stageContent.innerHTML = `<div style="font-size:13px; text-align:center; padding:20px;">카드 제출 완료! 다른 플레이어를 기다리는 중...</div>`;
+            }
+          };
+        } else {
+          stageContent.innerHTML = `
+            <div style="font-size:12px; color:#52c41a; font-weight:bold;">당신은 [잔류조]입니다!</div>
+            <div style="font-size:11px; color:#aaa;">마을 행동을 선택하세요:</div>
+            <div class="action-btn-group" style="flex-direction:column; gap:6px; margin-top:8px;">
+              <button class="game-btn btn-sub" id="act-bless">✨ 축복하기 (카드 1장 드로우 지원)</button>
+              <button class="game-btn btn-sub" id="act-predict">🔮 예언하기 (피해 예측)</button>
+            </div>
+          `;
+
+          document.getElementById('act-bless').onclick = () => submitVillageAction('BLESS');
+          document.getElementById('act-predict').onclick = () => submitVillageAction('PREDICT');
+        }
+
+      } else if (phase === 'GAME_OVER') {
+        phaseTitle.textContent = '🏆 게임 종료';
+        stageContent.innerHTML = `
+          <div style="font-size:16px; font-weight:900; text-align:center; padding:20px; color:#ff85a2;">
+            게임이 종료되었습니다!
+          </div>
+          <button class="game-btn btn-sub" onclick="location.href='lobby.html?room=${roomId}'">대기실로 돌아가기</button>
+        `;
       }
     }
-  }
 
-  function sendVote(voteVal) {
-    ws.send(JSON.stringify({ type: 'VOTE', vote: voteVal }));
-  }
+    function sendVote(val) {
+      ws.send(JSON.stringify({ type: 'VOTE', vote: val }));
+      stageContent.innerHTML = `<div style="font-size:13px; text-align:center; padding:20px;">투표 완료! 결과를 기다리는 중...</div>`;
+    }
+
+    function submitVillageAction(act) {
+      ws.send(JSON.stringify({ type: 'SUBMIT_ACTION', action: act }));
+      stageContent.innerHTML = `<div style="font-size:13px; text-align:center; padding:20px;">행동 제출 완료! 결과를 기다리는 중...</div>`;
+    }
+  })();
 </script>
 </body>
 </html>
